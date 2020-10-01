@@ -1,5 +1,6 @@
 import { WebSQLDatabase } from 'expo-sqlite'
-import { get } from 'lodash'
+import { get, first } from 'lodash'
+import { wrap } from './helpers'
 
 interface Where {
   column: string
@@ -26,32 +27,16 @@ export default class QueryBuilder {
   private wheres: Where[] = []
 
   /**
+   * The columns to be selected.
+   */
+  private columns: string[] = ['*']
+
+  /**
    * Create a new query builder instance.
    */
   constructor(db: WebSQLDatabase, table: string) {
     this.db = db
     this.table = table
-  }
-
-  /**
-   * Perform a select * query.
-   */
-  public selectAll(): Promise<Array<any>> {
-    return new Promise((resolve, reject) => {
-      this.db.transaction((tx) => {
-        tx.executeSql(
-          `select * from ${this.table}`,
-          [],
-          (_, result) => {
-            resolve(get(result.rows, '_array', []))
-          },
-          (_, error) => {
-            reject(error)
-            return true
-          },
-        )
-      })
-    })
   }
 
   /**
@@ -81,13 +66,40 @@ export default class QueryBuilder {
   }
 
   /**
+   * Perform an update query.
+   */
+  public update(attributes: Object): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+      this.db.transaction((tx) => {
+        const placeholder = Object.keys(attributes)
+          .map((column) => `${wrap(column, '`')} = ?`)
+          .join(', ')
+
+        tx.executeSql(
+          ['update', this.table, 'set', placeholder, this.buildWhere()].join(
+            ' ',
+          ),
+          Object.values(attributes),
+          (_, result) => {
+            resolve(result.insertId !== undefined)
+          },
+          (_, error) => {
+            reject(error)
+            return true
+          },
+        )
+      })
+    })
+  }
+
+  /**
    * Perform a delete query.
    */
   public delete(): Promise<boolean> {
     return new Promise((resolve, reject) => {
       this.db.transaction((tx) => {
         tx.executeSql(
-          [`delete from ${this.table}`, this.buildWhere()].join(' '),
+          `delete from ${this.table} ${this.buildWhere()}`,
           [],
           (_, result) => {
             resolve(result.insertId !== undefined)
@@ -99,6 +111,70 @@ export default class QueryBuilder {
         )
       })
     })
+  }
+
+  /**
+   * Execute the query and get all results.
+   */
+  public get(): Promise<Array<Object>> {
+    return new Promise((resolve, reject) => {
+      this.db.transaction((tx) => {
+        tx.executeSql(
+          [
+            'select',
+            this.columns.join(', '),
+            'from',
+            this.table,
+            this.buildWhere(),
+          ].join(' '),
+          [],
+          (_, result) => {
+            resolve(get(result.rows, '_array', []))
+          },
+          (_, error) => {
+            reject(error)
+            return true
+          },
+        )
+      })
+    })
+  }
+
+  /**
+   * Execute the query and get the first result.
+   */
+  public first() {
+    return new Promise((resolve, reject) => {
+      this.db.transaction((tx) => {
+        tx.executeSql(
+          [
+            'select',
+            this.columns.join(', '),
+            'from',
+            this.table,
+            this.buildWhere(),
+            'limit ?',
+          ].join(' '),
+          [1],
+          (_, result) => {
+            const results = get(result.rows, '_array', [])
+            resolve(first(results))
+          },
+          (_, error) => {
+            reject(error)
+            return true
+          },
+        )
+      })
+    })
+  }
+
+  /**
+   * Set the columns to be selected.
+   */
+  public select(columns: string[] = ['*']): QueryBuilder {
+    this.columns = columns
+    return this
   }
 
   /**
@@ -123,7 +199,7 @@ export default class QueryBuilder {
         [
           index > 0 ? where.boolean : '',
           'where',
-          where.column,
+          wrap(where.column, '`'),
           where.condition,
           where.value,
         ].join(' '),

@@ -1,4 +1,5 @@
-import { get } from 'lodash';
+import { get, first } from 'lodash';
+import { wrap } from './helpers';
 export default class QueryBuilder {
     /**
      * Create a new query builder instance.
@@ -8,23 +9,12 @@ export default class QueryBuilder {
          * The where constraints for the query.
          */
         this.wheres = [];
+        /**
+         * The columns to be selected.
+         */
+        this.columns = ['*'];
         this.db = db;
         this.table = table;
-    }
-    /**
-     * Perform a select * query.
-     */
-    selectAll() {
-        return new Promise((resolve, reject) => {
-            this.db.transaction((tx) => {
-                tx.executeSql(`select * from ${this.table}`, [], (_, result) => {
-                    resolve(get(result.rows, '_array', []));
-                }, (_, error) => {
-                    reject(error);
-                    return true;
-                });
-            });
-        });
     }
     /**
      * Perform an insert query.
@@ -46,17 +36,15 @@ export default class QueryBuilder {
         });
     }
     /**
-     * Perform a delete query.
-     *
-     * @throws Error when table name is not specified.
+     * Perform an update query.
      */
-    delete() {
-        if (!this.table) {
-            throw new Error('No table specified');
-        }
+    update(attributes) {
         return new Promise((resolve, reject) => {
             this.db.transaction((tx) => {
-                tx.executeSql([`delete from ${this.table}`, this.buildWhere()].join(' '), [], (_, result) => {
+                const placeholder = Object.keys(attributes)
+                    .map((column) => `${wrap(column, '`')} = ?`)
+                    .join(', ');
+                tx.executeSql(['update', this.table, 'set', placeholder, this.buildWhere()].join(' '), Object.values(attributes), (_, result) => {
                     resolve(result.insertId !== undefined);
                 }, (_, error) => {
                     reject(error);
@@ -64,6 +52,72 @@ export default class QueryBuilder {
                 });
             });
         });
+    }
+    /**
+     * Perform a delete query.
+     */
+    delete() {
+        return new Promise((resolve, reject) => {
+            this.db.transaction((tx) => {
+                tx.executeSql(`delete from ${this.table} ${this.buildWhere()}`, [], (_, result) => {
+                    resolve(result.insertId !== undefined);
+                }, (_, error) => {
+                    reject(error);
+                    return true;
+                });
+            });
+        });
+    }
+    /**
+     * Execute the query and get all results.
+     */
+    get() {
+        return new Promise((resolve, reject) => {
+            this.db.transaction((tx) => {
+                tx.executeSql([
+                    'select',
+                    this.columns.join(', '),
+                    'from',
+                    this.table,
+                    this.buildWhere(),
+                ].join(' '), [], (_, result) => {
+                    resolve(get(result.rows, '_array', []));
+                }, (_, error) => {
+                    reject(error);
+                    return true;
+                });
+            });
+        });
+    }
+    /**
+     * Execute the query and get the first result.
+     */
+    first() {
+        return new Promise((resolve, reject) => {
+            this.db.transaction((tx) => {
+                tx.executeSql([
+                    'select',
+                    this.columns.join(', '),
+                    'from',
+                    this.table,
+                    this.buildWhere(),
+                    'limit ?',
+                ].join(' '), [1], (_, result) => {
+                    const results = get(result.rows, '_array', []);
+                    resolve(first(results));
+                }, (_, error) => {
+                    reject(error);
+                    return true;
+                });
+            });
+        });
+    }
+    /**
+     * Set the columns to be selected.
+     */
+    select(columns = ['*']) {
+        this.columns = columns;
+        return this;
     }
     /**
      * Add a basic where clause to the query.
@@ -80,7 +134,7 @@ export default class QueryBuilder {
             .map((where, index) => [
             index > 0 ? where.boolean : '',
             'where',
-            where.column,
+            wrap(where.column, '`'),
             where.condition,
             where.value,
         ].join(' '))

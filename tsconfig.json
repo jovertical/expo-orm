@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2015",
-    "lib": ["ESNext"],
+    "lib": ["ESNext", "DOM"],
     "module": "ES2015",
     "moduleResolution": "node",
     "outDir": "build",

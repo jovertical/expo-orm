@@ -13,23 +13,37 @@ export default class QueryBuilder {
      */
     private wheres;
     /**
+     * The columns to be selected.
+     */
+    private columns;
+    /**
      * Create a new query builder instance.
      */
     constructor(db: WebSQLDatabase, table: string);
-    /**
-     * Perform a select * query.
-     */
-    selectAll(): Promise<Array<any>>;
     /**
      * Perform an insert query.
      */
     insert(attributes: Object): Promise<boolean>;
     /**
+     * Perform an update query.
+     */
+    update(attributes: Object): Promise<boolean>;
+    /**
      * Perform a delete query.
-     *
-     * @throws Error when table name is not specified.
      */
     delete(): Promise<boolean>;
+    /**
+     * Execute the query and get all results.
+     */
+    get(): Promise<Array<Object>>;
+    /**
+     * Execute the query and get the first result.
+     */
+    first(): Promise<unknown>;
+    /**
+     * Set the columns to be selected.
+     */
+    select(columns?: string[]): QueryBuilder;
     /**
      * Add a basic where clause to the query.
      */
