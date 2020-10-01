@@ -102,7 +102,7 @@ export default class QueryBuilder {
           `delete from ${this.table} ${this.buildWhere()}`,
           [],
           (_, result) => {
-            resolve(result.insertId !== undefined)
+            resolve(get(result.rows.item(0), 'rowsAffected') > 0)
           },
           (_, error) => {
             reject(error)
