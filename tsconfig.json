@@ -4,10 +4,14 @@
     "lib": ["ESNext", "DOM"],
     "module": "ES2015",
     "moduleResolution": "node",
+    "esModuleInterop": true,
     "outDir": "build",
     "strict": true,
     "sourceMap": false,
-    "baseUrl": "./src"
+    "baseUrl": "./src",
+    "paths": {
+      "*": ["types/*", "node_modules/*"]
+    }
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules"]

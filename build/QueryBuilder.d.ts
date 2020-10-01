@@ -1,13 +1,4 @@
-import { WebSQLDatabase } from 'expo-sqlite';
-declare type ConditionalOperator = '=' | '!=' | '>' | '>=' | '<' | '<=';
-declare type ValidValue = number | string | null;
-declare type LogicalOperator = 'and' | 'or' | 'not';
 export default class QueryBuilder {
-    private db;
-    /**
-     * The table which the query is targeting.
-     */
-    private table?;
     /**
      * The where constraints for the query.
      */
@@ -17,29 +8,18 @@ export default class QueryBuilder {
      */
     private columns;
     /**
-     * Create a new query builder instance.
+     * The table which the query is targeting
      */
-    constructor(db: WebSQLDatabase, table: string);
+    private table;
     /**
-     * Perform an insert query.
+     * Create a new query builder instance
      */
-    insert(attributes: Object): Promise<boolean>;
-    /**
-     * Perform an update query.
-     */
-    update(attributes: Object): Promise<boolean>;
-    /**
-     * Perform a delete query.
-     */
-    delete(): Promise<boolean>;
-    /**
-     * Execute the query and get all results.
-     */
-    get(): Promise<Array<Object>>;
-    /**
-     * Execute the query and get the first result.
-     */
-    first(): Promise<unknown>;
+    constructor(table: string);
+    insert(attributes: Object): string;
+    update(attributes: Object): string;
+    delete(): string;
+    get(): string;
+    find(): string;
     /**
      * Set the columns to be selected.
      */
@@ -49,8 +29,7 @@ export default class QueryBuilder {
      */
     where(column: string, condition: ConditionalOperator, value: ValidValue, boolean?: LogicalOperator): QueryBuilder;
     /**
-     * Build an array of wheres to an sql compatible query.
+     * Build the array of wheres as sql.
      */
     private buildWhere;
 }
-export {};

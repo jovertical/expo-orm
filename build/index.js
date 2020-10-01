@@ -1,2 +1,2 @@
-import QueryBuilder from './QueryBuilder';
-export { QueryBuilder };
+import Database from './Database';
+export { Database };

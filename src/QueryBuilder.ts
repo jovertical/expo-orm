@@ -1,26 +1,6 @@
-import { WebSQLDatabase } from 'expo-sqlite'
-import { get, first } from 'lodash'
 import { wrap } from './helpers'
 
-interface Where {
-  column: string
-  condition: ConditionalOperator
-  value: ValidValue
-  boolean: LogicalOperator
-}
-
-type ConditionalOperator = '=' | '!=' | '>' | '>=' | '<' | '<='
-type ValidValue = number | string | null
-type LogicalOperator = 'and' | 'or' | 'not'
-
 export default class QueryBuilder {
-  private db: WebSQLDatabase
-
-  /**
-   * The table which the query is targeting.
-   */
-  private table?: string
-
   /**
    * The where constraints for the query.
    */
@@ -32,141 +12,57 @@ export default class QueryBuilder {
   private columns: string[] = ['*']
 
   /**
-   * Create a new query builder instance.
+   * The table which the query is targeting
    */
-  constructor(db: WebSQLDatabase, table: string) {
-    this.db = db
+  private table: string
+
+  /**
+   * Create a new query builder instance
+   */
+  constructor(table: string) {
     this.table = table
   }
 
-  /**
-   * Perform an insert query.
-   */
-  public insert(attributes: Object): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.db.transaction((tx) => {
-        const fields = Object.keys(attributes).join(',')
-        const placeholder = Object.keys(attributes)
-          .map(() => '?')
-          .join(',')
+  public insert(attributes: Object): string {
+    const fields = Object.keys(attributes).join(', ')
+    const placeholder = Object.keys(attributes)
+      .map(() => '?')
+      .join(', ')
 
-        tx.executeSql(
-          `insert into ${this.table} (${fields}) values (${placeholder})`,
-          Object.values(attributes),
-          (_, result) => {
-            resolve(result.insertId !== undefined)
-          },
-          (_, error) => {
-            reject(error)
-            return true
-          },
-        )
-      })
-    })
+    return `insert into ${this.table} (${fields}) values (${placeholder})`
   }
 
-  /**
-   * Perform an update query.
-   */
-  public update(attributes: Object): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.db.transaction((tx) => {
-        const placeholder = Object.keys(attributes)
-          .map((column) => `${wrap(column, '`')} = ?`)
-          .join(', ')
+  public update(attributes: Object): string {
+    const placeholder = Object.keys(attributes)
+      .map((column) => `${wrap(column, '`')} = ?`)
+      .join(', ')
 
-        tx.executeSql(
-          ['update', this.table, 'set', placeholder, this.buildWhere()].join(
-            ' ',
-          ),
-          Object.values(attributes),
-          (_, result) => {
-            resolve(result.insertId !== undefined)
-          },
-          (_, error) => {
-            reject(error)
-            return true
-          },
-        )
-      })
-    })
+    return `update ${this.table} set ${placeholder} ${this.buildWhere()}`
   }
 
-  /**
-   * Perform a delete query.
-   */
-  public delete(): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-      this.db.transaction((tx) => {
-        tx.executeSql(
-          `delete from ${this.table} ${this.buildWhere()}`,
-          [],
-          (_, result) => {
-            resolve(get(result.rows.item(0), 'rowsAffected') > 0)
-          },
-          (_, error) => {
-            reject(error)
-            return true
-          },
-        )
-      })
-    })
+  public delete(): string {
+    return `delete from ${wrap(this.table, '`')} ${this.buildWhere()}`
   }
 
-  /**
-   * Execute the query and get all results.
-   */
-  public get(): Promise<Array<Object>> {
-    return new Promise((resolve, reject) => {
-      this.db.transaction((tx) => {
-        tx.executeSql(
-          [
-            'select',
-            this.columns.join(', '),
-            'from',
-            this.table,
-            this.buildWhere(),
-          ].join(' '),
-          [],
-          (_, result) => {
-            resolve(get(result.rows, '_array', []))
-          },
-          (_, error) => {
-            reject(error)
-            return true
-          },
-        )
-      })
-    })
+  public get(): string {
+    return [
+      'select',
+      this.columns.join(', '),
+      'from',
+      wrap(this.table, '`'),
+      this.buildWhere(),
+    ].join(' ')
   }
 
-  /**
-   * Execute the query and get the first result.
-   */
-  public first() {
-    return new Promise((resolve, reject) => {
-      this.db.transaction((tx) => {
-        tx.executeSql(
-          [
-            'select',
-            this.columns.join(', '),
-            'from',
-            this.table,
-            this.buildWhere(),
-            'limit ?',
-          ].join(' '),
-          [1],
-          (_, result) => {
-            const results = get(result.rows, '_array', [])
-            resolve(first(results))
-          },
-          (_, error) => {
-            reject(error)
-            return true
-          },
-        )
-      })
-    })
+  public find(): string {
+    return [
+      'select',
+      this.columns.join(', '),
+      'from',
+      wrap(this.table, '`'),
+      'where id = ?',
+      'limit 1;',
+    ].join(' ')
   }
 
   /**
@@ -191,7 +87,7 @@ export default class QueryBuilder {
   }
 
   /**
-   * Build an array of wheres to an sql compatible query.
+   * Build the array of wheres as sql.
    */
   private buildWhere(): string {
     return this.wheres
@@ -204,6 +100,6 @@ export default class QueryBuilder {
           where.value,
         ].join(' '),
       )
-      .join()
+      .join('')
   }
 }

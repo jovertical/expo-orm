@@ -6,6 +6,7 @@
   "repository": "git@github.com:jovertical/expo-orm.git",
   "author": "Jovert Palonpon <jovertical@gmail.com>",
   "license": "MIT",
+  "type": "module",
   "scripts": {
     "build": "rimraf build && tsc --declaration",
     "test": "jest"
@@ -15,6 +16,7 @@
     "@types/lodash": "^4.14.161",
     "expo-sqlite": "^8.4.0",
     "jest": "^26.4.2",
+    "jest-extended": "^0.11.5",
     "lodash": "^4.17.20",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.4.1",
