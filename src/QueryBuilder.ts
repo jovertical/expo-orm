@@ -54,13 +54,13 @@ export default class QueryBuilder {
     ].join(' ')
   }
 
-  public find(): string {
+  public find(column = 'id'): string {
     return [
       'select',
       this.columns.join(', '),
       'from',
       wrap(this.table, '`'),
-      'where id = ?',
+      `where ${column} = ?`,
       'limit 1;',
     ].join(' ')
   }

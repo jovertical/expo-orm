@@ -9,6 +9,7 @@
   "type": "module",
   "scripts": {
     "build": "rimraf build && tsc --declaration",
+    "start": "yarn build -w",
     "test": "jest"
   },
   "devDependencies": {
@@ -18,6 +19,7 @@
     "jest": "^26.4.2",
     "jest-extended": "^0.11.5",
     "lodash": "^4.17.20",
+    "nodemon": "^2.0.4",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.4.1",
     "typescript": "^4.0.3"

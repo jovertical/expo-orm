@@ -64,8 +64,11 @@ export default class Database {
       })
   }
 
-  public async find(id: number | string): Promise<Object | undefined> {
-    return this.executeSql(this.query.find(), [id])
+  public async find(
+    id: number | string,
+    column = 'id',
+  ): Promise<Object | undefined> {
+    return this.executeSql(this.query.find(column), [id])
       .then((result) => first(result?.rows))
       .catch((error) => {
         throw new Error(error)
