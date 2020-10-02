@@ -12,28 +12,48 @@ export default class Database {
   /**
    * The database connection to use
    */
-  private db: WebSQLDatabase
+  private connection: WebSQLDatabase
 
   /**
    * The query builder
    */
-  private query: QueryBuilder
+  private query!: QueryBuilder
 
   /**
    * Create a new database instance
-   *
-   * @todo Option to override default connection
    */
-  constructor(table: string) {
-    this.db = openDatabase('database.db')
-    this.query = new QueryBuilder(table)
+  constructor(connection: string, table?: string) {
+    this.connection = openDatabase(connection)
+
+    if (table) {
+      this.query = new QueryBuilder(table)
+    }
+  }
+
+  /**
+   * Set the database connection to use
+   */
+  public static connection(
+    name: string = 'database.db',
+    table?: string,
+  ): Database {
+    return new Database(name, table)
   }
 
   /**
    * Set the table which the query is targeting
+   *
+   * @todo Use current connection
    */
   public static table(name: string): Database {
-    return new Database(name)
+    return this.connection(undefined, name)
+  }
+
+  /**
+   * Get the database connection to use
+   */
+  public getConnection(): WebSQLDatabase {
+    return this.connection
   }
 
   public async get(): Promise<Array<any>> {
@@ -102,7 +122,7 @@ export default class Database {
     params: Array<any> = [],
   ): Promise<SqlResult[]> {
     return new Promise((txResolve: any, txReject) => {
-      this.db.transaction((tx) => {
+      this.connection.transaction((tx) => {
         Promise.all(
           statements.map((sql, index) => {
             return new Promise((sqlResolve, sqlReject) => {
