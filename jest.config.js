@@ -3,5 +3,4 @@ export default {
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
-  setupFilesAfterEnv: ['./tests/setup.ts'],
 }
