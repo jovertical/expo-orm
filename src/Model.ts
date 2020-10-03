@@ -3,14 +3,9 @@ import { get, pick } from 'lodash'
 
 export default abstract class Model {
   /**
-   * The database connection to use
-   */
-  protected connection = 'database.db'
-
-  /**
    * The table associated with the model
    */
-  protected table?: string
+  protected table!: string
 
   /**
    * The primary key for the model
@@ -23,7 +18,7 @@ export default abstract class Model {
   protected fillable: string[] = []
 
   /**
-   * Create a new constructor instance
+   * Create a new model instance
    */
   constructor(attributes?: Object) {
     this.fill(attributes)
@@ -81,9 +76,16 @@ export default abstract class Model {
   }
 
   /**
+   * Get the database connection to use
+   */
+  protected static connection() {
+    throw new Error('Failed to open database connection')
+  }
+
+  /**
    * Create a new database connection
    */
   protected newDatabase(): Database {
-    return Database.connection(this.connection, this.table)
+    return Database.connect((this as any).connection).table(this.table)
   }
 }

@@ -1,4 +1,4 @@
-import { WebSQLDatabase, openDatabase } from 'expo-sqlite'
+import { WebSQLDatabase } from 'expo-sqlite/src/SQLite.types'
 import { get, first, values } from 'lodash'
 import QueryBuilder from './QueryBuilder'
 
@@ -22,38 +22,24 @@ export default class Database {
   /**
    * Create a new database instance
    */
-  constructor(connection: string, table?: string) {
-    this.connection = openDatabase(connection)
-
-    if (table) {
-      this.query = new QueryBuilder(table)
-    }
+  constructor(connection: WebSQLDatabase) {
+    this.connection = connection
   }
 
   /**
-   * Set the database connection to use
+   * Set the database connection
    */
-  public static connection(
-    name: string = 'database.db',
-    table?: string,
-  ): Database {
-    return new Database(name, table)
+  public static connect(db: WebSQLDatabase): Database {
+    return new Database(db)
   }
 
   /**
    * Set the table which the query is targeting
-   *
-   * @todo Use current connection
    */
-  public static table(name: string): Database {
-    return this.connection(undefined, name)
-  }
+  public table(name: string): Database {
+    this.query = new QueryBuilder(name)
 
-  /**
-   * Get the database connection to use
-   */
-  public getConnection(): WebSQLDatabase {
-    return this.connection
+    return this
   }
 
   public async get(): Promise<Array<any>> {
