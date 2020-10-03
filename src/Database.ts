@@ -75,15 +75,9 @@ export default class Database {
       })
   }
 
-  public async insert(attributes: Object): Promise<Object | undefined> {
+  public async insert(attributes: Object): Promise<number | null> {
     return this.executeSql(this.query.insert(attributes), values(attributes))
-      .then((result) => {
-        if (!result?.insertId) {
-          throw new Error('Insert operation failed')
-        }
-
-        return this.find(result?.insertId)
-      })
+      .then((result) => result?.insertId || null)
       .catch((error) => {
         throw new Error(error)
       })
@@ -99,7 +93,7 @@ export default class Database {
 
   public async delete(): Promise<boolean> {
     return this.executeSql(this.query.delete())
-      .then((result) => !!result?.insertId)
+      .then((result) => result?.rowsAffected !== 0)
       .catch((error) => {
         throw new Error(error)
       })

@@ -1,51 +1,89 @@
 import Database from './Database'
-import { get } from 'lodash'
+import { get, pick } from 'lodash'
 
 export default abstract class Model {
   /**
    * The database connection to use
    */
-  protected static connection = 'database.db'
+  protected connection = 'database.db'
 
   /**
    * The table associated with the model
    */
-  protected static table?: string
-
-  /**
-   * Create a new constructor instance
-   */
-  constructor(attributes: Object) {
-    this.fill(attributes)
-  }
+  protected table?: string
 
   /**
    * The primary key for the model
    */
-  protected static primaryKey = 'id'
+  protected primaryKey = 'id'
+
+  /**
+   * The attributes that are mass assignable
+   */
+  protected fillable: string[] = []
+
+  /**
+   * Create a new constructor instance
+   */
+  constructor(attributes?: Object) {
+    this.fill(attributes)
+  }
 
   /**
    * Find a model by its primary key
    */
   public static async find(id: number | string): Promise<Model | null> {
-    const result = await Database.connection(this.connection, this.table).find(
-      id,
-      this.primaryKey,
-    )
+    const instance = this.newInstance()
 
-    if (!result) {
-      return null
-    }
+    const record = await instance.newDatabase().find(id, instance.primaryKey)
 
-    return Reflect.construct(this, [result])
+    return record ? this.newInstance().fill(record) : null
+  }
+
+  /**
+   * Save a new model and return the instance
+   */
+  public static async create(attributes: Object): Promise<Model | null> {
+    const instance = this.newInstance(attributes)
+
+    const saved = await instance.save()
+
+    return saved ? this.find(saved) : null
+  }
+
+  /**
+   * Create a new instance of the given model
+   */
+  public static newInstance(attributes?: Object): Model {
+    return Reflect.construct(this, [attributes])
+  }
+
+  /**
+   * Save the model to the database
+   */
+  public async save(): Promise<number | null> {
+    // Check if saving an existing record, update the model instead
+
+    return this.newDatabase().insert(pick(this, this.fillable))
   }
 
   /**
    * Fill the model with an array of attributes
    */
-  protected fill(attributes: Object) {
-    for (const attribute of Object.keys(attributes)) {
-      ;(this as any)[attribute] = get(attributes, attribute, null)
+  public fill(attributes?: Object): Model {
+    if (attributes) {
+      for (const attribute of Object.keys(attributes)) {
+        ;(this as any)[attribute] = get(attributes, attribute, null)
+      }
     }
+
+    return this
+  }
+
+  /**
+   * Create a new database connection
+   */
+  protected newDatabase(): Database {
+    return Database.connection(this.connection, this.table)
   }
 }

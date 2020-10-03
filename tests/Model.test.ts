@@ -11,5 +11,5 @@ test('attributes can be filled', () => {
 })
 
 class Post extends Model {
-  protected static table = 'posts'
+  table = 'posts'
 }
