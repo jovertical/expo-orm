@@ -51,6 +51,25 @@ export default abstract class Model {
     return saved ? this.find(saved) : null
   }
 
+  public static where(
+    column: string,
+    condition: ConditionalOperator,
+    value: ValidValue,
+    boolean: LogicalOperator = 'and',
+  ): Database {
+    return this.newInstance()
+      .newDatabase()
+      .where(column, condition, value, boolean)
+  }
+
+  public static async get(): Promise<Object[]> {
+    const instance = this.newInstance()
+    const db = instance.newDatabase()
+    console.log(db)
+
+    return db.get()
+  }
+
   /**
    * Create a new instance of the given model
    */
@@ -78,13 +97,6 @@ export default abstract class Model {
     }
 
     return this
-  }
-
-  /**
-   * Get the database connection to use
-   */
-  protected static connection() {
-    throw new Error('Failed to open database connection')
   }
 
   /**

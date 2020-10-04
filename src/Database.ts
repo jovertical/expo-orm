@@ -38,8 +38,7 @@ export default class Database {
    */
   public table(name: string): Database {
     this.query = new QueryBuilder(name)
-
-    return new Database()
+    return this
   }
 
   public async get(): Promise<Array<any>> {
