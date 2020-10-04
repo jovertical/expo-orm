@@ -1,4 +1,4 @@
-import { WebSQLDatabase } from 'expo-sqlite/src/SQLite.types'
+import * as SQLite from 'expo-sqlite'
 import { get, first, values } from 'lodash'
 import QueryBuilder from './QueryBuilder'
 
@@ -12,7 +12,7 @@ export default class Database {
   /**
    * The database connection to use
    */
-  private connection: WebSQLDatabase
+  private connection: SQLite.WebSQLDatabase
 
   /**
    * The query builder
@@ -22,15 +22,15 @@ export default class Database {
   /**
    * Create a new database instance
    */
-  constructor(connection: WebSQLDatabase) {
-    this.connection = connection
+  constructor(connection = 'database.db') {
+    this.connection = SQLite.openDatabase(connection)
   }
 
   /**
    * Set the database connection
    */
-  public static connect(db: WebSQLDatabase): Database {
-    return new Database(db)
+  public static connect(name: string): Database {
+    return new Database(name)
   }
 
   /**
@@ -39,7 +39,7 @@ export default class Database {
   public table(name: string): Database {
     this.query = new QueryBuilder(name)
 
-    return this
+    return new Database()
   }
 
   public async get(): Promise<Array<any>> {
@@ -98,6 +98,13 @@ export default class Database {
   public select(columns: string[] = ['*']): Database {
     this.query.select(columns)
     return this
+  }
+
+  /**
+   * Get the database connection to use
+   */
+  public getConnection(): SQLite.WebSQLDatabase {
+    return this.connection
   }
 
   private async executeBulkSql(

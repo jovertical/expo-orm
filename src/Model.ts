@@ -3,6 +3,11 @@ import { get, pick } from 'lodash'
 
 export default abstract class Model {
   /**
+   * The database connection to use
+   */
+  protected connection = 'database.db'
+
+  /**
    * The table associated with the model
    */
   protected table!: string
@@ -86,6 +91,6 @@ export default abstract class Model {
    * Create a new database connection
    */
   protected newDatabase(): Database {
-    return Database.connect((this as any).connection).table(this.table)
+    return Database.connect(this.connection).table(this.table)
   }
 }
