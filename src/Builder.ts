@@ -1,8 +1,8 @@
 import Database from './Database'
-import { first, values } from 'lodash'
+import { first, noop, values } from 'lodash'
 import { wrap } from './helpers'
 
-export default class QueryBuilder {
+export default class Builder {
   /**
    * The database instance
    */
@@ -24,6 +24,16 @@ export default class QueryBuilder {
   private columns: string[] = ['*']
 
   /**
+   * An event that must be called when inserting.
+   */
+  public onInsert = noop
+
+  /**
+   * An event that must be called when updating.
+   */
+  public onUpdate = noop
+
+  /**
    * Create a new query builder instance
    */
   constructor(database: Database) {
@@ -33,12 +43,16 @@ export default class QueryBuilder {
   /**
    * Set the table which the query is targeting
    */
-  public setFrom(from: string): QueryBuilder {
+  public setFrom(from: string): Builder {
     this.from = from
     return this
   }
 
   public async insert(attributes: Object): Promise<number | null> {
+    this.onInsert(attributes, (newAttributes: Object) => {
+      attributes = Object.assign(attributes, newAttributes)
+    })
+
     const fields = Object.keys(attributes).join(', ')
     const placeholder = Object.keys(attributes)
       .map(() => '?')
@@ -56,6 +70,10 @@ export default class QueryBuilder {
   }
 
   public async update(attributes: Object): Promise<boolean> {
+    this.onUpdate(attributes, (newAttributes: Object) => {
+      attributes = Object.assign(attributes, newAttributes)
+    })
+
     const placeholder = Object.keys(attributes)
       .map((column) => `${wrap(column, '`')} = ?`)
       .join(', ')
@@ -140,7 +158,7 @@ export default class QueryBuilder {
   /**
    * Set the columns to be selected.
    */
-  public select(columns: string[] = ['*']): QueryBuilder {
+  public select(columns: string[] = ['*']): Builder {
     this.columns = columns
     return this
   }
@@ -153,7 +171,7 @@ export default class QueryBuilder {
     condition: ConditionalOperator,
     value: ValidValue,
     boolean: LogicalOperator = 'and',
-  ): QueryBuilder {
+  ): Builder {
     this.wheres = [...this.wheres, { column, condition, value, boolean }]
     return this
   }

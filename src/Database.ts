@@ -1,6 +1,6 @@
 import * as SQLite from 'expo-sqlite'
 import { get, first } from 'lodash'
-import QueryBuilder from './QueryBuilder'
+import Builder from './Builder'
 
 interface SqlResult {
   rows: Array<Object>
@@ -31,8 +31,8 @@ export default class Database {
   /**
    * Set the table which the query is targeting
    */
-  public table(name: string): QueryBuilder {
-    return new QueryBuilder(this).setFrom(name)
+  public table(name: string): Builder {
+    return new Builder(this).setFrom(name)
   }
 
   /**

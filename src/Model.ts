@@ -1,5 +1,6 @@
+import Builder from './Builder'
 import Database from './Database'
-import QueryBuilder from './QueryBuilder'
+import ModelBuilder from './ModelBuilder'
 import { get, pick } from 'lodash'
 
 export default abstract class Model {
@@ -22,6 +23,11 @@ export default abstract class Model {
    * The attributes that are mass assignable
    */
   protected fillable: string[] = []
+
+  /**
+   * Indicates if the model should be timestamped
+   */
+  public timestamps = true
 
   /**
    * Create a new model instance
@@ -52,13 +58,23 @@ export default abstract class Model {
     return saved ? this.find(saved) : null
   }
 
+  /**
+   * Begin querying a model with where
+   */
   public static where(
     column: string,
     condition: ConditionalOperator,
     value: ValidValue,
     boolean: LogicalOperator = 'and',
-  ): QueryBuilder {
+  ): Builder {
     return this.newInstance().query().where(column, condition, value, boolean)
+  }
+
+  /**
+   * Begin querying a model with eager loading
+   */
+  public static with(relations: string[] | string): Builder {
+    return this.newInstance().newModelQuery().with(relations).getQuery()
   }
 
   public static async get(): Promise<Object[]> {
@@ -78,8 +94,14 @@ export default abstract class Model {
    */
   public async save(): Promise<number | null> {
     // Check if saving an existing record, update the model instead
-
     return this.query().insert(pick(this, this.fillable))
+  }
+
+  /**
+   * Get the table associated with the model
+   */
+  public getTable(): string {
+    return this.table
   }
 
   /**
@@ -105,15 +127,29 @@ export default abstract class Model {
   /**
    * Create a new query builder instance
    */
-  protected query(): QueryBuilder {
+  protected query(): Builder {
+    return this.newModelQuery().getQuery()
+  }
+
+  /**
+   * Create a new model builder instance
+   */
+  private newModelQuery(): ModelBuilder {
+    return new ModelBuilder(this.newQuery()).setModel(this)
+  }
+
+  /**
+   * Create a new builder instance
+   */
+  private newQuery(): Builder {
     const database = this.newDatabase()
-    return new QueryBuilder(database).setFrom(this.table)
+    return new Builder(database).setFrom(this.table)
   }
 
   /**
    * Create a new database connection
    */
-  protected newDatabase(): Database {
+  private newDatabase(): Database {
     return Database.connect(this.connection)
   }
 }
