@@ -1,4 +1,5 @@
 import Database from './Database'
+import QueryBuilder from './QueryBuilder'
 import { get, pick } from 'lodash'
 
 export default abstract class Model {
@@ -35,7 +36,7 @@ export default abstract class Model {
   public static async find(id: number | string): Promise<Model | null> {
     const instance = this.newInstance()
 
-    const record = await instance.newDatabase().find(id, instance.primaryKey)
+    const record = await instance.query().find(id, instance.primaryKey)
 
     return record ? this.newInstance().fill(record) : null
   }
@@ -56,18 +57,13 @@ export default abstract class Model {
     condition: ConditionalOperator,
     value: ValidValue,
     boolean: LogicalOperator = 'and',
-  ): Database {
-    return this.newInstance()
-      .newDatabase()
-      .where(column, condition, value, boolean)
+  ): QueryBuilder {
+    return this.newInstance().query().where(column, condition, value, boolean)
   }
 
   public static async get(): Promise<Object[]> {
     const instance = this.newInstance()
-    const db = instance.newDatabase()
-    console.log(db)
-
-    return db.get()
+    return instance.query().get()
   }
 
   /**
@@ -83,7 +79,7 @@ export default abstract class Model {
   public async save(): Promise<number | null> {
     // Check if saving an existing record, update the model instead
 
-    return this.newDatabase().insert(pick(this, this.fillable))
+    return this.query().insert(pick(this, this.fillable))
   }
 
   /**
@@ -100,9 +96,24 @@ export default abstract class Model {
   }
 
   /**
+   * Convert the model attributes to it's JSON form
+   */
+  public toJson(): Object {
+    return pick(this, [...this.fillable, this.primaryKey])
+  }
+
+  /**
+   * Create a new query builder instance
+   */
+  protected query(): QueryBuilder {
+    const database = this.newDatabase()
+    return new QueryBuilder(database).setFrom(this.table)
+  }
+
+  /**
    * Create a new database connection
    */
   protected newDatabase(): Database {
-    return Database.connect(this.connection).table(this.table)
+    return Database.connect(this.connection)
   }
 }

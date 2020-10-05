@@ -1,12 +1,6 @@
 ## Installation
 
-```bash
-# Using yarn
-yarn add expo-orm
-
-# Using npm
-npm install expo-orm
-```
+WIP
 
 ## Usage
 
