@@ -121,7 +121,12 @@ export default abstract class Model {
    * Convert the model attributes to it's JSON form
    */
   public toJson(): Object {
-    return pick(this, [...this.fillable, this.primaryKey])
+    return pick(this, [
+      ...this.fillable,
+      this.primaryKey,
+      'created_at',
+      'updated_at',
+    ])
   }
 
   /**
