@@ -9,35 +9,20 @@ interface SqlResult {
 }
 
 export default class Database {
-  /**
-   * The database connection to use
-   */
   private connection: SQLite.WebSQLDatabase
 
-  /**
-   * Create a new database instance
-   */
   constructor(connection = 'database.db') {
     this.connection = SQLite.openDatabase(connection)
   }
 
-  /**
-   * Set the database connection to use
-   */
   public static connect(name: string): Database {
     return new Database(name)
   }
 
-  /**
-   * Set the table which the query is targeting
-   */
   public table(name: string): Builder {
     return new Builder(this).setFrom(name)
   }
 
-  /**
-   * Get the database connection to use
-   */
   public getConnection(): SQLite.WebSQLDatabase {
     return this.connection
   }

@@ -155,17 +155,11 @@ export default class Builder {
       })
   }
 
-  /**
-   * Set the columns to be selected.
-   */
   public select(columns: string[] = ['*']): Builder {
     this.columns = columns
     return this
   }
 
-  /**
-   * Add a basic where clause to the query.
-   */
   public where(
     column: string,
     condition: ConditionalOperator,
@@ -176,9 +170,6 @@ export default class Builder {
     return this
   }
 
-  /**
-   * Build the array of wheres as sql.
-   */
   private buildWhere(): string {
     return this.wheres
       .map((where, index) =>
